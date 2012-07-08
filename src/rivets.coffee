@@ -6,6 +6,30 @@
 # The Rivets namespace.
 Rivets = {}
 
+bindToElement = (el, event, callback) ->
+  if $
+    $(el).on event, callback
+  else
+    el.addEventListener event, callback
+
+unbindFromElement = (el, event, callback) ->
+  if $
+    $(el).off event, callback
+  else
+    el.removeEventListener event, callback
+
+trim = (string) ->
+  if string.trim
+    string.trim()
+  else
+    string.replace /^\s+|\s+$/g, ''
+
+map = (array, callback) ->
+  if _
+    _.map array, callback
+  else
+    array.map callback
+
 # A single binding between a model attribute and a DOM element.
 class Rivets.Binding
   # All information about the binding is passed into the constructor; the DOM
@@ -32,7 +56,7 @@ class Rivets.Binding
       @set Rivets.config.adapter.read @model, @keypath
 
     if @type in bidirectionals
-      @el.addEventListener 'change', @publish
+      bindToElement @el, 'change', @publish
 
   publish: (e) =>
     el = e.target or e.srcElement
@@ -43,7 +67,7 @@ class Rivets.Binding
     Rivets.config.adapter.unsubscribe @model, @keypath, @set
 
     if @type in bidirectionals
-      @el.removeEventListener 'change', @publish
+      unbindFromElement @el, 'change', @publish
 
 # A collection of bindings for a parent element.
 class Rivets.View
@@ -66,7 +90,7 @@ class Rivets.View
       for attribute in node.attributes
         if bindingRegExp.test attribute.name
           type = attribute.name.replace bindingRegExp, ''
-          pipes = attribute.value.split('|').map (pipe) -> pipe.trim()
+          pipes = map(attribute.value.split('|'), trim)
           path = pipes.shift().split '.'
           model = @models[path.shift()]
           keypath = path.join '.'
